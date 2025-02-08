@@ -62,7 +62,7 @@ Enumerate inventory for a specific subscription:
 	AzRBACCommand = &cobra.Command{
 		Use:     "rbac",
 		Aliases: []string{},
-		Short:   "Display role assignemts for Azure principals",
+		Short:   "Display role assignments for Azure principals",
 		Long: `
 Enumerate role assignments for a specific tenant:
 ./cloudfox az rbac --tenant TENANT_ID
@@ -71,7 +71,6 @@ Enumerate role assignments for a specific subscription:
 ./cloudfox az rbac --subscription SUBSCRIPTION_ID
 `,
 		Run: func(cmd *cobra.Command, args []string) {
-
 			err := azure.AzRBACCommand(AzTenantID, AzSubscription, AzOutputFormat, AzOutputDirectory, cmd.Root().Version, AzVerbosity, AzWrapTable, AzMergedTable)
 			if err != nil {
 				log.Fatal(err)
@@ -113,10 +112,51 @@ Enumerate storage accounts for a specific subscription:
 			}
 		},
 	}
+	AzRunbooksCommand = &cobra.Command{
+		Use:     "runbooks",
+		Aliases: []string{},
+		Short:   "Downloads all run-books in the account",
+		Long: `
+Downloads all run-books for a specific tenant:
+./cloudfox az runbooks --tenant TENANT_ID
+
+Downloads all run-books for a specific subscription:
+./cloudfox az runbooks --subscription SUBSCRIPTION_ID
+`,
+		Run: func(cmd *cobra.Command, args []string) {
+			err := azure.AzRunbooksCommand(AzTenantID, AzSubscription, AzOutputDirectory, cmd.Root().Version, AzVerbosity, AzWrapTable, AzMergedTable)
+			if err != nil {
+				log.Fatal(err)
+			}
+		},
+	}
+	AzAllVulnChecksCommand = &cobra.Command{
+		Use:     "all-vulnchecks",
+		Aliases: []string{},
+		Short:   "Runs all vulnerability checks",
+		Long:    `Executes all vulnerability checks to collect and display information from all supported Azure services.`,
+		Run: func(cmd *cobra.Command, args []string) {
+			// Run the runbooks command as part of the all-vulnchecks command
+			AzRunbooksCommand.Run(cmd, args)
+		},
+	}
+	AzAllEnumChecksCommand = &cobra.Command{
+		Use:     "all-enumchecks",
+		Aliases: []string{},
+		Short:   "Runs all enumeration checks",
+		Long:    `Executes all enumeration checks to collect and display information from all supported Azure services.`,
+		Run: func(cmd *cobra.Command, args []string) {
+			// Run the enumeration commands
+			AzInventoryCommand.Run(cmd, args)
+			AzRBACCommand.Run(cmd, args)
+			AzVMsCommand.Run(cmd, args)
+			AzStorageCommand.Run(cmd, args)
+		},
+	}
+	AzLogger = internal.NewLogger()
 )
 
 func init() {
-
 	AzWhoamiCommand.Flags().BoolVarP(&AzWhoamiListRGsAlso, "list-rgs", "l", false, "Drill down to the resource group level")
 
 	// Global flags
@@ -134,6 +174,9 @@ func init() {
 		AzRBACCommand,
 		AzVMsCommand,
 		AzStorageCommand,
-		AzInventoryCommand)
-
+		AzInventoryCommand,
+		AzRunbooksCommand,    // Add the new runbooks command
+		AzAllVulnChecksCommand, // Add the new all-vulnchecks command
+		AzAllEnumChecksCommand, // Add the new all-enumchecks command
+	)
 }
